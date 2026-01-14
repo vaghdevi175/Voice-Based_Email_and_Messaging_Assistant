@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Biometric Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/biometric.css') }}">
+</head>
+
+<script>
+  window.CURRENT_PAGE = "biometric";
+</script>
+
+<body>
+
+<div class="page-container">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel biometric-left">
+    <h1>Biometric Verification</h1>
+    <p class="biometric-desc">
+      Verify your identity using face recognition to securely access your account.
+    </p>
+
+    <img
+      src="{{ url_for('static', filename='images/biometric.png') }}"
+      class="biometric-illustration"
+      alt="Biometric Illustration"
+    />
+  </div>
+
+  <!-- RIGHT CARD -->
+  <div class="auth-container biometric-card">
+
+    <h2 class="card-title">Face Verification</h2>
+    <p class="card-subtitle">
+      Position your face inside the circle and remain still
+    </p>
+
+    <!-- CAMERA -->
+    <div class="circle-camera">
+      <video id="video" autoplay playsinline></video>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <!-- BUTTONS -->
+    <button id="verifyBtn" class="btn-primary">
+      Verify Identity
+    </button>
+
+    <button id="retakeBtn" class="btn-secondary" style="display:none;">
+      Retake
+    </button>
+
+    <button id="registerBtn" class="btn-secondary" style="display:none;">
+      Register
+    </button>
+
+  </div>
+</div>
+
+<!-- VOICE ACTIVATOR -->
+<div id="voice-activator"
+     style="position:fixed; inset:0; z-index:9999; background:transparent;">
+</div>
+
+<!-- JS -->
+<script src="{{ url_for('static', filename='js/biometric.js') }}"></script>
+<script src="{{ url_for('static', filename='js/voice_biometric.js') }}"></script>
+
+</body>
+</html>

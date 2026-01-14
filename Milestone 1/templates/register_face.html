@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Registration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Base styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/biometric.css') }}">
+</head>
+
+<body>
+
+<div class="page-container">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel biometric-left">
+    <h1>Face Registration</h1>
+
+    <p class="biometric-desc">
+      Register your face for secure biometric authentication.
+      This will be used for future logins.
+    </p>
+
+    <img
+      src="{{ url_for('static', filename='images/biometric.png') }}"
+      class="biometric-illustration"
+      alt="Biometric Illustration"
+    />
+  </div>
+
+  <!-- RIGHT CARD -->
+  <div class="auth-container biometric-card">
+
+    <h2 class="card-title">Face Registration</h2>
+    <p class="card-subtitle">
+      Position your face inside the circle and remain still
+    </p>
+
+    <!-- CIRCULAR CAMERA -->
+    <div class="circle-camera">
+      <video id="video" autoplay playsinline></video>
+    </div>
+
+    <!-- Hidden canvas -->
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <!-- REGISTER BUTTON -->
+    <button id="registerBtn" class="btn-primary" onclick="registerFace()">
+      Register Face
+    </button>
+
+    <!-- STATUS -->
+    <p id="status" class="status-text"></p>
+
+  </div>
+
+</div>
+
+
+
+<script>
+const video = document.getElementById("video");
+const registerBtn = document.getElementById("registerBtn");
+const statusText = document.getElementById("status");
+
+// Start camera
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => video.srcObject = stream)
+  .catch(() => statusText.innerText = "Camera access denied");
+
+// Register face
+function registerFace() {
+  registerBtn.className = "btn-primary loading";
+  registerBtn.innerText = "Registering";
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+
+  fetch("/save_face", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      image: canvas.toDataURL("image/jpeg")
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    registerBtn.classList.remove("loading");
+
+    if (data.status === "registered" || data.status === "success") {
+  registerBtn.className = "btn-primary success";
+  registerBtn.innerText = "Registered ✓";
+
+  speak("Your face has been successfully registered.");
+
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 1200);
+
+} else if (data.status === "already_registered") {
+  registerBtn.className = "btn-primary error";
+  registerBtn.innerText = "Already Registered";
+
+  speak("This face is already registered. Redirecting to verification.");
+
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 1500);
+
+} else {
+  registerBtn.className = "btn-primary error";
+  registerBtn.innerText = "Try Again";
+
+  speak("Face not captured properly. Please try again.");
+}
+
+  })
+  .catch(() => {
+    registerBtn.className = "btn-primary error";
+    registerBtn.innerText = "Try Again";
+  });
+}
+</script>
+
+
+<div id="voice-activator"
+     style="position:fixed; inset:0; z-index:9999; background:transparent;">
+</div>
+
+<script src="{{ url_for('static', filename='js/voice_register_face.js') }}"></script>
+
+
+
+</body>
+</html>

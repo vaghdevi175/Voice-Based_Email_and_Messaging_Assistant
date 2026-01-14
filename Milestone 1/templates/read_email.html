@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ subject }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet"
+ href="https://cdn-uicons.flaticon.com/2.4.2/uicons-regular-rounded/css/uicons-regular-rounded.css">
+
+<style>
+/* ================= RESET ================= */
+*{
+  box-sizing:border-box;
+}
+
+/* ================= PAGE ================= */
+body{
+  margin:0;
+  font-family:"Google Sans", Roboto, Arial, sans-serif;
+  height:100vh;
+  overflow:hidden;
+
+  /* SINGLE background source */
+  background:linear-gradient(135deg,#0b1220,#1f3b57,#7fa6c9);
+}
+
+/* ================= TOP BAR ================= */
+.topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+
+  background:transparent;  /* ✅ IMPORTANT */
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+
+
+.menu-btn{
+  color:white;
+  cursor:pointer;
+  margin-right:12px;
+  font-size:18px;
+}
+
+.topbar h3{
+  color:white;
+  font-weight:500;
+  font-size:16px;
+}
+
+/* ================= LAYOUT ================= */
+.layout{
+  display:flex;
+  height:calc(100vh - 64px); /* FULL remaining height */
+  padding:24px;
+
+  /* ❌ DO NOT set background here */
+  background:transparent;
+
+  justify-content:center;
+  align-items:flex-start;
+}
+
+
+/* ================= MAIL CARD ================= */
+.mail-card{
+  width:100%;
+  max-width:900px;
+  height:calc(100vh - 104px); /* topbar + spacing */
+  background:white;
+  border-radius:18px;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+  display:flex;
+  flex-direction:column;
+}
+
+
+
+/* ================= GMAIL-LIKE SCROLLBAR ================= */
+.mail-scroll::-webkit-scrollbar{
+  width:10px;
+}
+
+.mail-scroll::-webkit-scrollbar-track{
+  background:transparent;
+}
+
+.mail-scroll::-webkit-scrollbar-thumb{
+  background:rgba(0,0,0,0.25);
+  border-radius:10px;
+}
+
+.mail-scroll::-webkit-scrollbar-thumb:hover{
+  background:rgba(0,0,0,0.4);
+}
+
+.mail-scroll{
+  flex:1;
+  overflow-y:auto;           /* ✅ ONLY SCROLL HERE */
+  padding:32px 0;
+}
+
+/* ================= HEADER ================= */
+.mail-header{
+  padding:32px 40px 20px;   /* 🔥 more left padding */
+}
+
+.mail-header h2{
+  margin:0 0 6px;
+  font-size:20px;
+  color:#202124;
+}
+
+.mail-from{
+  font-size:14px;
+  color:#5f6368;
+}
+
+.divider{
+  height:1px;
+  background:#e0e0e0;
+  margin:18px 0;
+}
+
+/* ================= EMAIL BODY ================= */
+.mail-body{
+  max-width:680px;
+  margin:0 auto;
+  padding:0 24px;
+  font-size:14px;
+  line-height:1.6;
+  color:#202124;
+}
+.mail-area{
+  width:100%;
+  max-width:980px;
+  height:100%;              /* 🔥 KEY */
+  background:white;
+  border-radius:18px;
+
+  overflow-y:auto;          /* Gmail-style scroll */
+  box-shadow:0 12px 32px rgba(0,0,0,.25);
+}
+
+
+
+
+/* Normalize email HTML */
+.mail-body table{
+  max-width:100% !important;
+}
+
+.mail-body img{
+  max-width:100%;
+  height:auto;
+}
+
+.mail-body a{
+  color:#1a73e8;
+  text-decoration:none;
+}
+
+.mail-body a:hover{
+  text-decoration:underline;
+}
+
+/* ================= BACK BUTTON ================= */
+.back-btn{
+  margin-top:24px;
+  padding:8px 16px;
+  border-radius:18px;
+  border:none;
+  background:#1a73e8;
+  color:white;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.back-btn:hover{
+  background:#185abc;
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <i class="fi fi-rr-arrow-left menu-btn" onclick="history.back()"></i>
+  <h3>Inbox</h3>
+</div>
+
+<!-- CONTENT -->
+<div class="layout">
+  <div class="mail-card">
+
+  <div class="mail-header">
+     <h2 id="mail-subject">{{ subject }}</h2>
+    <div class="mail-from" id="mail-from"><b>From:</b> {{ sender }}</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SCROLL AREA -->
+  <div class="mail-scroll">
+    <div class="mail-body" id="mail-body">
+
+      {{ body | safe }}
+    </div>
+  </div>
+
+</div>
+
+</div>
+<script>
+function readCurrentEmail(){
+  const subject = document.getElementById("mail-subject")?.innerText || "";
+  const from = document.getElementById("mail-from")?.innerText || "";
+  const body = document.getElementById("mail-body")?.innerText || "";
+
+  const textToRead = `
+    Subject: ${subject}.
+    ${from}.
+    Email content: ${body}
+  `;
+
+  speak(textToRead);
+}
+</script>
+<script>
+const params = new URLSearchParams(window.location.search);
+if (params.get("read") === "true") {
+  setTimeout(() => {
+    if (typeof startWhisper === "function") {
+      startWhisper();
+    }
+  }, 800);
+}
+</script>
+
+
+<script src="{{ url_for('static', filename='js/voice_webspeech.js') }}"></script>
+
+<script>
+function readCurrentEmail(){
+  const subject = document.getElementById("mail-subject")?.innerText || "";
+  const from = document.getElementById("mail-from")?.innerText || "";
+  const body = document.getElementById("mail-body")?.innerText || "";
+
+  if(!body){
+    speak("No email content found");
+    return;
+  }
+
+  speak(`Subject ${subject}. ${from}. ${body}`);
+}
+
+/* AUTO READ WHEN ?read=true */
+window.addEventListener("load", () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("read") === "true") {
+    setTimeout(readCurrentEmail, 500);
+  }
+});
+</script>
+
+
+
+</body>
+</html>
