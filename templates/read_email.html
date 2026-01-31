@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ subject }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet"
+ href="https://cdn-uicons.flaticon.com/2.4.2/uicons-regular-rounded/css/uicons-regular-rounded.css">
+
+<style>
+* { box-sizing: border-box; }
+
+body{
+  margin:0;
+  font-family:"Google Sans", Roboto, Arial, sans-serif;
+  height:100vh;
+  background:linear-gradient(135deg,#0b1220,#1f3b57,#7fa6c9);
+}
+
+.topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  padding:0 24px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+
+.menu-btn{
+  color:white;
+  cursor:pointer;
+  margin-right:12px;
+  font-size:18px;
+}
+
+.topbar h3{
+  color:white;
+  font-size:16px;
+}
+
+.layout{
+  display:flex;
+  height:calc(100vh - 64px);
+  padding:24px;
+  justify-content:center;
+}
+
+.mail-card{
+  width:100%;
+  max-width:900px;
+  background:white;
+  border-radius:18px;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+  display:flex;
+  flex-direction:column;
+}
+
+.mail-header{
+  padding:28px 40px 16px;
+}
+
+.mail-header h2{
+  margin:0 0 6px;
+  font-size:20px;
+}
+
+.mail-from{
+  font-size:14px;
+  color:#5f6368;
+}
+
+.divider{
+  height:1px;
+  background:#e0e0e0;
+}
+
+.mail-scroll{
+  flex:1;
+  overflow-y:auto;
+  padding:28px 0;
+}
+
+.mail-body{
+  max-width:680px;
+  margin:0 auto;
+  padding:0 24px;
+  font-size:14px;
+  line-height:1.6;
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <i class="fi fi-rr-arrow-left menu-btn" onclick="goBack()"></i>
+  <h3>Inbox</h3>
+</div>
+
+<!-- CONTENT -->
+<div class="layout">
+  <div class="mail-card">
+
+    <div class="mail-header">
+      <h2 id="mail-subject">{{ subject }}</h2>
+      <div class="mail-from" id="mail-from">
+        <b>From:</b> {{ sender }}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="mail-scroll">
+      <div class="mail-body" id="mail-body">
+        {{ body | safe }}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- GLOBAL VOICE SCRIPT -->
+<script src="{{ url_for('static', filename='js/voice_webspeech.js') }}"></script>
+
+<script>
+/* ================= PAGE FLAGS ================= */
+window.CURRENT_PAGE = "read_mail";
+window.isReadingMail = false;
+window.isReadingPaused = false;
+
+/* ================= READER STATE ================= */
+let chunks = [];
+let index = 0;
+let stopped = false;
+
+/* Cache mail text */
+const subjectText = document.getElementById("mail-subject").innerText;
+const fromText = document.getElementById("mail-from").innerText;
+const bodyText = document.getElementById("mail-body").innerText;
+
+// 🔗 Make variables available to voice_webspeech.js
+window.mailSubject = subjectText;
+window.mailFrom = fromText;
+window.mailBody = bodyText;
+
+
+
+
+/* Split text safely */
+function splitText(text) {
+  return text.match(/[^.!?]+[.!?]+/g) || [text];
+}
+
+/* Read chunk-by-chunk */
+function readNext() {
+  if (stopped || window.isReadingPaused || index >= chunks.length) return;
+
+  const u = new SpeechSynthesisUtterance(chunks[index]);
+  u.rate = 0.95;
+
+  u.onend = () => {
+    index++;
+    readNext();
+  };
+
+  speechSynthesis.speak(u);
+}
+
+/* ▶ READ EMAIL */
+function readCurrentEmail() {
+  const fullText = `Subject ${subjectText}. ${fromText}. ${bodyText}`;
+  chunks = splitText(fullText);
+  index = 0;
+  stopped = false;
+
+  window.isReadingMail = true;
+  window.isReadingPaused = false;
+
+  speechSynthesis.cancel();
+  readNext();
+}
+
+/* ⏸ PAUSE */
+function pauseReading() {
+  window.isReadingPaused = true;
+  speechSynthesis.cancel();
+}
+
+/* ▶ RESUME */
+function resumeReading() {
+  if (!window.isReadingPaused) return;
+  window.isReadingPaused = false;
+  readNext();
+}
+
+/* ⛔ STOP */
+function stopReading() {
+  stopped = true;
+  speechSynthesis.cancel();
+  window.isReadingMail = false;
+  window.isReadingPaused = false;
+  index = 0;
+}
+
+/* 🎤 VOICE COMMANDS FROM navRec */
+document.addEventListener("voice-command", e => {
+  const t = e.detail.toLowerCase();
+
+  if (t.includes("read")) readCurrentEmail();
+  else if (t.includes("pause")) pauseReading();
+  else if (t.includes("resume") || t.includes("continue")) resumeReading();
+  else if (t.includes("stop")) stopReading();
+  else if (t.includes("back")) goBack();
+});
+
+/* 🔙 BACK */
+function goBack() {
+  speechSynthesis.cancel();
+  window.location.href = "/gmail_inbox";
+}
+</script>
+
+</body>
+</html>

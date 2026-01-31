@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Voice Test</h2>
+<p>Click anywhere and speak</p>
+
+<script>
+let recognition;
+
+document.addEventListener("click", () => {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("SpeechRecognition NOT supported");
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.continuous = false;
+
+  recognition.onstart = () => {
+    alert("🎧 Listening started. Speak now.");
+    console.log("LISTENING");
+  };
+
+  recognition.onresult = (event) => {
+    alert("Heard: " + event.results[0][0].transcript);
+    console.log("HEARD:", event.results[0][0].transcript);
+  };
+
+  recognition.onerror = (e) => {
+    alert("ERROR: " + e.error);
+    console.error(e);
+  };
+
+  recognition.start();
+});
+</script>
+
+</body>
+</html>

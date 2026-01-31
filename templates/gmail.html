@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gmail | Voice Assistant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  window.CURRENT_PAGE = "gmail_inbox";
+</script>
+
+<link rel="stylesheet"
+ href="https://cdn-uicons.flaticon.com/2.4.2/uicons-regular-rounded/css/uicons-regular-rounded.css">
+
+<script>
+  window.CURRENT_PAGE = "gmail_inbox";
+</script>
+<script>
+  // 🔥 HARD RESET reading state when inbox loads
+  window.isReadingMail = false;
+  window.isReadingPaused = false;
+  window.readPageAnnounced = false;
+</script>
+
+<style>
+/* ================= RESET ================= */
+* { box-sizing: border-box; }
+
+body{
+  margin:0;
+  font-family:"Google Sans", Roboto, Arial, sans-serif;
+  background:linear-gradient(135deg,#0b1220,#1f3b57,#7fa6c9);
+  min-height:100vh;
+}
+
+/* ================= TOP BAR ================= */
+.topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+
+.left-top{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.topbar h3{
+  color:white;
+  font-weight:500;
+}
+
+.menu-btn{
+  color:white;
+  font-size:20px;
+  cursor:pointer;
+}
+
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+.top-actions i{
+  font-size:20px;
+  color:white;
+  cursor:pointer;
+}
+
+/* ================= AVATAR ================= */
+.avatar{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:#1a73e8;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* ================= LAYOUT ================= */
+.layout{
+  display:flex;
+  height:calc(100vh - 64px);
+  padding:16px;
+  gap:16px;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar{
+  width:260px;
+  background:white;
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  transform:translateX(-110%);
+  transition:0.25s ease;
+}
+
+.sidebar.open{
+  transform:translateX(0);
+}
+
+/* ================= SIDEBAR NAV ================= */
+.nav{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.nav-title{
+  font-size:11px;
+  font-weight:600;
+  color:#5f6368;
+  letter-spacing:.6px;
+  padding:12px 16px 8px;
+}
+
+.nav a{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px 16px;
+  border-radius:14px;
+  font-size:14px;
+  color:#202124;
+  text-decoration:none;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.nav a i{
+  font-size:16px;
+  color:#5f6368;
+}
+
+.nav a:hover{
+  background:#f1f3f4;
+}
+
+.nav a.active{
+  background:#e8f0fe;
+  color:#1a73e8;
+  font-weight:500;
+}
+
+.nav a.active i{
+  color:#1a73e8;
+}
+
+/* ================= MAIL AREA ================= */
+.mail-area{
+  flex:1;
+  background:white;
+  border-radius:18px;
+  overflow-y:auto;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+}
+
+/* ================= MAIL ROW ================= */
+.mail{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:12px 16px;
+  border-bottom:1px solid #f1f3f4;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.mail:hover{
+  background:#f1f3f4;
+}
+
+.from{
+  width:220px;
+  font-weight:500;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.subject{
+  color:#5f6368;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ================= COMPOSE ================= */
+.compose{
+  position:fixed;
+  bottom:28px;
+  right:28px;
+  height:56px;
+  padding:0 24px;
+  border-radius:28px;
+  background:#1a73e8;
+  border:none;
+  color:white;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
+
+.compose:hover{
+  background:#185abc;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= TOP BAR ================= -->
+<div class="topbar">
+  <div class="left-top">
+    <i class="fi fi-rr-menu-burger menu-btn" onclick="toggleSidebar()"></i>
+    <h3>Inbox</h3>
+  </div>
+  <div class="top-actions">
+    <i class="fi fi-rr-refresh" onclick="location.reload()"></i>
+    <div class="avatar">V</div>
+  </div>
+</div>
+
+<!-- ================= LAYOUT ================= -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav">
+      <p class="nav-title">MAILBOX</p>
+
+      <a href="/gmail_inbox"
+         class="{{ 'active' if CURRENT_PAGE == 'gmail_inbox' else '' }}">
+        <i class="fi fi-rr-inbox"></i>
+        Inbox
+      </a>
+
+      <a href="/gmail_sent"
+         class="{{ 'active' if CURRENT_PAGE == 'gmail_sent' else '' }}">
+        <i class="fi fi-rr-paper-plane"></i>
+        Sent
+      </a>
+
+      <a>
+        <i class="fi fi-rr-star"></i>
+        Starred
+      </a>
+
+      <a>
+        <i class="fi fi-rr-file"></i>
+        Drafts
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIL AREA -->
+  <main class="mail-area">
+    {% for mail in emails %}
+     <a href="/open_email/{{ loop.index0 }}"
+   class="mail-link"
+   data-index="{{ loop.index0 }}"
+   style="text-decoration:none;color:inherit">
+
+        <div class="mail">
+          <div class="from">{{ mail.from }}</div>
+          <div class="subject">{{ mail.subject }}</div>
+        </div>
+      </a>
+    {% endfor %}
+  </main>
+
+</div>
+
+<!-- ================= COMPOSE BUTTON ================= -->
+<button class="compose" onclick="openCompose()">
+  <i class="fi fi-rr-edit"></i>
+  Compose
+</button>
+
+<!-- ================= SCRIPTS ================= -->
+<script>
+  window.isNavigating = false;
+function safeNavigate(action) {
+  if (window.isNavigating) return;
+
+  window.isNavigating = true;
+
+  speechSynthesis.cancel();
+
+  setTimeout(() => {
+    action();
+  }, 300); // ⏱️ small delay fixes race condition
+}
+
+function toggleSidebar(){
+  document.getElementById("sidebar").classList.toggle("open");
+}
+
+function openCompose(){
+  window.location.href = "/compose";
+}
+
+document.addEventListener("click", e => {
+  const sidebar = document.getElementById("sidebar");
+  const menuBtn = document.querySelector(".menu-btn");
+
+  if (
+    sidebar.classList.contains("open") &&
+    !sidebar.contains(e.target) &&
+    !menuBtn.contains(e.target)
+  ){
+    sidebar.classList.remove("open");
+  }
+});
+</script>
+<script>
+  // 🔥 HARD RESET ON INBOX LOAD
+  window.isReadingMail = false;
+  window.isReadingPaused = false;
+  window.readPageAnnounced = false;
+
+  if (window.navRec) {
+    try {
+      window.navRec.onend = null;
+      window.navRec.stop();
+    } catch (e) {}
+    window.navRec = null;
+  }
+</script>
+
+<script src="{{ url_for('static', filename='js/voice_webspeech.js') }}"></script>
+
+</body>
+</html>
