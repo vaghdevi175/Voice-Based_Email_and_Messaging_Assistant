@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Compose Email (Voice)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- 🔒 Disable navigation voice ONLY -->
+<script>
+  window.DISABLE_NAV_VOICE = true;
+  window.CURRENT_PAGE = "compose";
+  window.isComposingMail = true;
+</script>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:linear-gradient(135deg,#0b1220,#1f3b57,#7fa6c9);
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.card{
+  background:#fff;
+  width:520px;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 12px 30px rgba(0,0,0,.3);
+}
+h2{ margin-top:0; }
+.hint{
+  text-align:center;
+  color:#666;
+  font-size:13px;
+  margin-bottom:12px;
+}
+input, textarea{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+button{
+  padding:12px 18px;
+  border:none;
+  border-radius:10px;
+  background:#1a73e8;
+  color:white;
+  font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Compose Email (Voice)</h2>
+  <div class="hint">Tap anywhere to start voice</div>
+
+  <input id="to" placeholder="To">
+  <input id="subject" placeholder="Subject">
+  <textarea id="body" rows="6" placeholder="Message"></textarea>
+
+  <button onclick="sendMail()">Send</button>
+</div>
+
+<script>
+/* ================= COMPOSE VOICE ENGINE ================= */
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+let step = 0;
+let speaking = false;
+
+/* 🔊 SPEAK */
+function speak(text, cb){
+  speaking = true;
+  speechSynthesis.cancel();
+
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.95;
+
+  u.onend = () => {
+    speaking = false;
+    if(cb) cb();
+  };
+
+  speechSynthesis.speak(u);
+}
+
+/* 🎤 LISTEN */
+function listen(){
+  if(speaking) return;
+
+  if(!rec){
+    rec = new SR();
+    rec.lang = "en-US";
+    rec.continuous = false;
+    rec.interimResults = false;
+
+    rec.onresult = e => {
+      const text = e.results[0][0].transcript.toLowerCase().trim();
+      console.log("🎤 COMPOSE:", text);
+      handleInput(text);
+    };
+  }
+
+  rec.start();
+}
+
+/* 🧠 FLOW */
+function handleInput(text){
+
+  if(step === 1){
+    to.value = normalizeEmail(text);
+    step = 2;
+    speak("What is the subject?", listen);
+    return;
+  }
+
+  if(step === 2){
+    subject.value = text;
+    step = 3;
+    speak("Tell me the message.", listen);
+    return;
+  }
+
+  if(step === 3){
+    body.value = text;
+    step = 4;
+    speak(
+      `You are sending an email to ${to.value}.
+       Subject is ${subject.value}.
+       Message is ${body.value}.
+       Say yes to send or no to cancel.`,
+      listen
+    );
+    return;
+  }
+
+  if(step === 4){
+    if(text.includes("yes")){
+      sendMail();
+    } else if(text.includes("no")){
+      step = 1;
+      speak("Okay. Please say the email address again.", listen);
+    }
+  }
+}
+
+/* ✉️ SEND */
+function sendMail(){
+  if(rec){
+    rec.stop();
+    rec = null;
+  }
+
+  speak("Sending email, please wait");
+
+  fetch("/send_mail", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      to: to.value,
+      subject: subject.value,
+      body: body.value
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if(d.status === "success"){
+      speak("Email sent successfully");
+      setTimeout(() => window.location.href="/gmail_sent", 2000);
+    } else {
+      speak("Failed to send email");
+    }
+  })
+  .catch(() => speak("Error while sending email"));
+}
+
+/* 🔧 EMAIL NORMALIZER */
+function normalizeEmail(text){
+  return text
+    .toLowerCase()
+    .replace(/\s+/g,"")
+    .replace(" at ","@")
+    .replace(" dot ",".")
+    .replace(/dot/g,".")
+    .replace(/\.+$/,"");
+}
+
+/* 🚀 TAP TO START (NO ONCE BUG) */
+document.body.addEventListener("click", () => {
+  if(step === 0){
+    step = 1;
+    speak("Whom should I send the email to?", listen);
+  }
+});
+</script>
+
+</body>
+</html>
